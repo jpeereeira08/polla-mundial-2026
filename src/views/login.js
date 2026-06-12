@@ -52,8 +52,9 @@ export async function render(contenedor) {
       if (modo === "registro") {
         const nombre = contenedor.querySelector("#nombre").value.trim();
         if (!nombre) { btn.disabled = false; return mostrar("Escribe tu nombre."); }
-        const { error: e } = await registrar(nombre, email, password);
+        const { data, error: e } = await registrar(nombre, email, password);
         if (e) throw e;
+        if (data?.session) { location.hash = RUTAS.dashboard; return; }
         contenedor.innerHTML = `
           <div class="tarjeta" style="max-width:380px;margin:3rem auto;text-align:center;">
             <h2>Revisa tu correo</h2>
@@ -75,6 +76,7 @@ export async function render(contenedor) {
     if (/Invalid login/i.test(msg)) return "Correo o contraseña incorrectos.";
     if (/already registered/i.test(msg)) return "Ese correo ya está registrado.";
     if (/Email not confirmed/i.test(msg)) return "Aún no confirmas tu correo. Revisa tu bandeja.";
+    if (/rate limit|after \d+ seconds/i.test(msg)) return "Hubo muchos registros seguidos. Espera unos minutos e intenta otra vez.";
     if (/at least 6/i.test(msg)) return "La contraseña debe tener al menos 6 caracteres.";
     return "No se pudo completar. Inténtalo de nuevo.";
   }
