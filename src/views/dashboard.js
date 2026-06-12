@@ -1,7 +1,7 @@
 // Dashboard: resumen personal, próximos partidos, últimos resultados y top del ranking.
 import { obtenerPerfil } from "../lib/auth.js";
 import { proximosPartidos, ultimosResultados, rankingCompleto } from "../lib/datos.js";
-import { esc, fmtFechaHora, estadoPartido, cuentaRegresiva } from "../lib/util.js";
+import { esc, fmtFechaHora, estadoPartido, cuentaRegresiva, flag } from "../lib/util.js";
 import { RUTAS } from "../config.js";
 
 export async function render(contenedor) {
@@ -45,7 +45,7 @@ export async function render(contenedor) {
 function filaProximo(p) {
   const est = estadoPartido(p, false);
   return `<div class="tarjeta fila">
-    <div><div>${esc(p.local?.nombre)} <span class="silencio">vs</span> ${esc(p.visitante?.nombre)}</div>
+    <div><div>${flag(p.local?.bandera_url, p.local?.nombre)}${esc(p.local?.nombre)} <span class="silencio">vs</span> ${flag(p.visitante?.bandera_url, p.visitante?.nombre)}${esc(p.visitante?.nombre)}</div>
       <div class="silencio">${fmtFechaHora(p.inicio)} · cierra en ${cuentaRegresiva(p.cierre)}</div></div>
     <span class="badge ${est.clase}">${est.etiqueta}</span>
   </div>`;
@@ -54,7 +54,7 @@ function filaProximo(p) {
 function filaResultado(p) {
   const r = p.resultado;
   return `<div class="tarjeta fila">
-    <div>${esc(p.local?.nombre)} <span class="silencio">vs</span> ${esc(p.visitante?.nombre)}
+    <div>${flag(p.local?.bandera_url, p.local?.nombre)}${esc(p.local?.nombre)} <span class="silencio">vs</span> ${flag(p.visitante?.bandera_url, p.visitante?.nombre)}${esc(p.visitante?.nombre)}
       <div class="silencio">${fmtFechaHora(p.inicio)}</div></div>
     <div style="font-family:var(--font-display);font-weight:700;font-size:20px;">${r ? `${r.goles_local} - ${r.goles_visitante}` : "—"}</div>
   </div>`;

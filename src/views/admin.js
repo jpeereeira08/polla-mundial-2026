@@ -1,7 +1,7 @@
 // Panel de administración: equipos, partidos, resultados, usuarios, recálculo y auditoría.
 import { obtenerPerfil } from "../lib/auth.js";
 import * as D from "../lib/datos.js";
-import { esc, fmtFechaHora } from "../lib/util.js";
+import { esc, fmtFechaHora, flag } from "../lib/util.js";
 import { ZONA_HORARIA } from "../config.js";
 
 const FASES = ["grupos","dieciseisavos","octavos","cuartos","semifinal","tercer_puesto","final"];
@@ -52,31 +52,64 @@ async function abrir(tab, panel) {
 // ---------- Equipos ----------
 async function panelEquipos(panel) {
   equipos = await D.listarEquipos();
-  panel.innerHTML = `
-    <div class="tarjeta pila" style="margin-bottom:1rem;">
-      <h3>Nuevo equipo</h3>
-      <div class="metricas">
-        <div><label>Nombre</label><input id="e-nombre"></div>
-        <div><label>Código (3 letras)</label><input id="e-codigo" maxlength="3"></div>
-        <div><label>Grupo (A–L)</label><input id="e-grupo" maxlength="1"></div>
+  let editId = null;
+  pintar();
+  function pintar() {
+    const ed = editId ? equipos.find(e => e.id === editId) : null;
+    panel.innerHTML = `
+      <div class="tarjeta pila" style="margin-bottom:1rem;">
+        <h3>${ed ? "Editar equipo" : "Nuevo equipo"}</h3>
+        <div class="metricas">
+          <div><label>Nombre</label><input id="e-nombre" value="${esc(ed?.nombre || "")}"></div>
+          <div><label>Código (3 letras)</label><input id="e-codigo" maxlength="3" value="${esc(ed?.codigo || "")}"></div>
+          <div><label>Grupo (A–L)</label><input id="e-grupo" maxlength="1" value="${esc(ed?.grupo || "")}"></div>
+          <div><label>Bandera (URL)</label><input id="e-bandera" value="${esc(ed?.bandera_url || "")}"></div>
+        </div>
+        <div class="fila" style="justify-content:flex-start;gap:.5rem;">
+          <button class="btn-primario" id="e-guardar">${ed ? "Guardar cambios" : "Agregar equipo"}</button>
+          ${ed ? `<button class="btn-secundario" id="e-cancelar">Cancelar</button>` : ""}
+        </div>
+        <p class="silencio" id="e-msg"></p>
       </div>
-      <button class="btn-primario" id="e-guardar">Agregar equipo</button>
-      <p class="silencio" id="e-msg"></p>
-    </div>
-    <div class="tarjeta" style="padding:0;overflow:hidden;">
-      <table><thead><tr><th>Equipo</th><th>Código</th><th>Grupo</th></tr></thead>
-      <tbody>${equipos.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.codigo)}</td><td>${esc(e.grupo||"—")}</td></tr>`).join("")||vacioFila(3)}</tbody></table>
-    </div>`;
-  panel.querySelector("#e-guardar").onclick = async ()=>{
+      <div class="tarjeta" style="padding:0;overflow-x:auto;">
+        <table><thead><tr><th></th><th>Equipo</th><th>Código</th><th>Grupo</th><th></th></tr></thead>
+        <tbody>${equipos.map(filaEq).join("") || vacioFila(5)}</tbody></table>
+      </div>`;
+    panel.querySelector("#e-guardar").onclick = guardar;
+    if (ed) panel.querySelector("#e-cancelar").onclick = () => { editId = null; pintar(); };
+    panel.querySelectorAll("[data-edit-eq]").forEach((b) =>
+      b.onclick = () => { editId = parseInt(b.dataset.editEq, 10); pintar(); window.scrollTo(0, 0); });
+    panel.querySelectorAll("[data-del-eq]").forEach((b) => b.onclick = borrar);
+  }
+  function filaEq(e) {
+    return `<tr>
+      <td style="width:30px;">${flag(e.bandera_url, e.nombre)}</td>
+      <td>${esc(e.nombre)}</td><td>${esc(e.codigo)}</td><td>${esc(e.grupo || "—")}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn-secundario" data-edit-eq="${e.id}" style="padding:.25rem .6rem;">Editar</button>
+        <button class="btn-secundario" data-del-eq="${e.id}" style="padding:.25rem .6rem;">Borrar</button>
+      </td></tr>`;
+  }
+  async function guardar() {
     const nombre = panel.querySelector("#e-nombre").value.trim();
     const codigo = panel.querySelector("#e-codigo").value.trim().toUpperCase();
-    const grupo  = panel.querySelector("#e-grupo").value.trim().toUpperCase() || null;
+    const grupo = panel.querySelector("#e-grupo").value.trim().toUpperCase() || null;
+    const bandera_url = panel.querySelector("#e-bandera").value.trim() || null;
     const msg = panel.querySelector("#e-msg");
-    if (!nombre || codigo.length !== 3) { msg.style.color="var(--err)"; msg.textContent="Nombre y código de 3 letras."; return; }
-    const err = await D.crearEquipo({ nombre, codigo, grupo });
-    if (err) { msg.style.color="var(--err)"; msg.textContent="No se pudo (¿código repetido?)."; return; }
+    if (!nombre || codigo.length !== 3) { msg.style.color = "var(--err)"; msg.textContent = "Nombre y código de 3 letras."; return; }
+    const datos = { nombre, codigo, grupo, bandera_url };
+    const err = editId ? await D.editarEquipo(editId, datos) : await D.crearEquipo(datos);
+    if (err) { msg.style.color = "var(--err)"; msg.textContent = "No se pudo (¿código repetido?)."; return; }
+    editId = null; panelEquipos(panel);
+  }
+  async function borrar(e) {
+    const id = parseInt(e.target.dataset.delEq, 10);
+    const eq = equipos.find((x) => x.id === id);
+    if (!confirm(`¿Borrar a ${eq?.nombre}? No se puede si está en algún partido.`)) return;
+    const err = await D.eliminarEquipo(id);
+    if (err) { alert("No se pudo borrar: probablemente está en algún partido."); return; }
     panelEquipos(panel);
-  };
+  }
 }
 
 // ---------- Partidos ----------
@@ -124,13 +157,21 @@ async function panelPartidos(panel) {
     panel.querySelector("#p-guardar").onclick = guardar;
     if (enEdicion) panel.querySelector("#p-cancelar").onclick = ()=>{ editId=null; pintar(); };
     panel.querySelectorAll("[data-editar]").forEach(b=> b.onclick = ()=>{ editId=parseInt(b.dataset.editar,10); pintar(); window.scrollTo(0,0); });
+    panel.querySelectorAll("[data-borrar]").forEach(b=> b.onclick = async ()=>{
+      if (!confirm("¿Borrar este partido? Se borran también sus pronósticos y su resultado.")) return;
+      const err = await D.eliminarPartido(parseInt(b.dataset.borrar,10));
+      if (err) alert("No se pudo borrar."); else abrir("Partidos", panel);
+    });
   }
   function filaPartido(p) {
     return `<tr>
-      <td>${esc(p.local?.nombre||"?")} vs ${esc(p.visitante?.nombre||"?")}</td>
+      <td>${flag(p.local?.bandera_url, p.local?.nombre)}${esc(p.local?.nombre || "?")} vs ${flag(p.visitante?.bandera_url, p.visitante?.nombre)}${esc(p.visitante?.nombre || "?")}</td>
       <td>${fmtFechaHora(p.inicio)}</td>
       <td><span class="silencio">${esc(p.estado)}</span></td>
-      <td><button class="btn-secundario" data-editar="${p.id}" style="padding:.3rem .7rem;">Editar</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn-secundario" data-editar="${p.id}" style="padding:.3rem .7rem;">Editar</button>
+        <button class="btn-secundario" data-borrar="${p.id}" style="padding:.3rem .7rem;">Borrar</button>
+      </td>
     </tr>`;
   }
   async function guardar() {

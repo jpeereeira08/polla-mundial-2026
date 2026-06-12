@@ -6,8 +6,8 @@ import { supabase } from "./supabase.js";
 const SELECT_PARTIDO = `
   id, inicio, cierre, estado, fase, grupo, estadio,
   equipo_local_id, equipo_visitante_id,
-  local:equipos!equipo_local_id(nombre, codigo),
-  visitante:equipos!equipo_visitante_id(nombre, codigo),
+  local:equipos!equipo_local_id(nombre, codigo, bandera_url),
+  visitante:equipos!equipo_visitante_id(nombre, codigo, bandera_url),
   resultados(goles_local, goles_visitante)
 `;
 
@@ -94,6 +94,18 @@ export async function listarEquipos() {
 
 export async function crearEquipo(equipo) {
   return (await supabase.from("equipos").insert(equipo)).error;
+}
+
+export async function editarEquipo(id, cambios) {
+  return (await supabase.from("equipos").update(cambios).eq("id", id)).error;
+}
+
+export async function eliminarEquipo(id) {
+  return (await supabase.from("equipos").delete().eq("id", id)).error;
+}
+
+export async function eliminarPartido(id) {
+  return (await supabase.from("partidos").delete().eq("id", id)).error;
 }
 
 export async function listarPartidos() {

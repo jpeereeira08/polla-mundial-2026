@@ -255,7 +255,10 @@ $$;
 create or replace function public.fn_proteger_rol()
 returns trigger language plpgsql security definer as $$
 begin
-  if not public.es_admin() and (new.rol <> old.rol or new.activo <> old.activo) then
+  -- Bloquea solo a usuarios de la app (con sesion). El editor SQL o el servidor
+  -- (auth.uid() nulo) si pueden asignar el primer administrador.
+  if auth.uid() is not null and not public.es_admin()
+     and (new.rol <> old.rol or new.activo <> old.activo) then
     raise exception 'No autorizado para cambiar rol o estado del usuario.';
   end if;
   return new;

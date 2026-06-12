@@ -1,7 +1,7 @@
 // Pronósticos: registra/edita marcadores. Cierre en vivo 5 min antes del inicio.
 import { obtenerPerfil } from "../lib/auth.js";
 import { partidosParaPronosticar, misPronosticos, guardarPronostico } from "../lib/datos.js";
-import { esc, fmtFechaHora, estadoPartido, cuentaRegresiva } from "../lib/util.js";
+import { esc, fmtFechaHora, estadoPartido, cuentaRegresiva, flag } from "../lib/util.js";
 
 let temporizador = null;
 
@@ -40,11 +40,11 @@ export async function render(contenedor) {
         <span class="badge ${est.clase}" data-estado>${est.etiqueta}${est.clave !== "cerrado" ? " · cierra en " + cuentaRegresiva(p.cierre) : ""}</span>
       </div>
       <div class="fila" style="justify-content:center;gap:.75rem;">
-        <span style="min-width:90px;text-align:right;">${esc(p.local?.nombre)}</span>
+        <span style="min-width:90px;text-align:right;">${esc(p.local?.nombre)} ${flag(p.local?.bandera_url, p.local?.nombre)}</span>
         <input class="marcador-input" data-gl type="number" min="0" max="99" value="${mio?.goles_local ?? ""}" ${cerrado ? "disabled" : ""} aria-label="Goles ${esc(p.local?.nombre)}" />
         <span class="silencio">–</span>
         <input class="marcador-input" data-gv type="number" min="0" max="99" value="${mio?.goles_visitante ?? ""}" ${cerrado ? "disabled" : ""} aria-label="Goles ${esc(p.visitante?.nombre)}" />
-        <span style="min-width:90px;">${esc(p.visitante?.nombre)}</span>
+        <span style="min-width:90px;">${flag(p.visitante?.bandera_url, p.visitante?.nombre)}${esc(p.visitante?.nombre)}</span>
       </div>
       <button class="btn-primario" data-guardar style="width:100%;margin-top:.75rem;" ${cerrado ? "disabled" : ""}>
         ${cerrado ? "Cerrado" : (mio ? "Actualizar pronóstico" : "Guardar pronóstico")}</button>

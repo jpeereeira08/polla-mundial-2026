@@ -52,3 +52,10 @@ export function etiquetaAcierto(tipo) {
 }
 
 export const MIN_CIERRE = MINUTOS_CIERRE;
+
+// Devuelve una etiqueta <img> con la bandera, o "" si no hay url.
+export function flag(url, nombre) {
+  if (!url) return "";
+  return `<img src="${esc(url)}" alt="${esc(nombre)}" width="22" height="16" loading="lazy" ` +
+         `style="border-radius:2px;vertical-align:-3px;object-fit:cover;margin-right:6px;">`;
+}
