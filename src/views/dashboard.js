@@ -35,7 +35,29 @@ export async function render(contenedor) {
       <h2>Ranking — top 3</h2>
       <div class="tarjeta" style="padding:0;overflow:hidden;">
         <table><tbody>${top3.map((r, i) => filaRanking(r, i, perfil.id)).join("") || vacio("Sin datos.")}</tbody></table>
-      </div>`;
+      </div>
+
+      <details style="margin-top:1.5rem;">
+        <summary style="cursor:pointer;font-family:var(--font-display);font-weight:700;font-size:20px;list-style:none;">
+          ¿Cómo se ganan los puntos? <span class="silencio" style="font-weight:400;font-size:13px;">(toca para ver)</span>
+        </summary>
+        <div class="tarjeta" style="margin-top:.6rem;padding:0;overflow:hidden;">
+          <table>
+            <thead><tr><th>Lo que logras</th><th class="num">Puntos</th></tr></thead>
+            <tbody>
+              <tr><td>Marcador exacto (clavas los dos goles)</td><td class="num" style="font-weight:700;color:var(--ok-fg);">5</td></tr>
+              <tr><td>Diferencia correcta (mismo ganador y misma diferencia)</td><td class="num" style="font-weight:700;color:var(--ambar-osc);">3</td></tr>
+              <tr><td>Solo aciertas quién gana (o que fue empate)</td><td class="num" style="font-weight:700;color:var(--info-fg);">1</td></tr>
+              <tr><td>Sin aciertos</td><td class="num" style="color:var(--texto-2);">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="silencio" style="margin:.6rem .25rem 0;">
+          Ejemplo (real Colombia 2-1 Brasil): pronosticar 2-1 = 5 pts · 3-2 o 1-0 = 3 pts · 4-0 = 1 pt · 0-1 = 0 pts.<br>
+          Desempates: puntaje → marcadores exactos → ganadores acertados → menor error de goles.
+          Los pronósticos se cierran 5 minutos antes de cada partido.
+        </p>
+      </details>`;
   } catch (e) {
     contenedor.innerHTML = `<div class="tarjeta"><p style="color:var(--err)">No se pudo cargar el tablero. Revisa tu conexión y la configuración de Supabase.</p></div>`;
     console.error(e);
