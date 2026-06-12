@@ -1,0 +1,10 @@
+{
+  "name": "polla-cron-resultados",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Descarga resultados del Mundial 2026 y los guarda en Supabase.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
