@@ -46,9 +46,10 @@ export async function partidosParaPronosticar() {
 }
 
 // Mapa { partido_id: {goles_local, goles_visitante} } de MIS pronósticos.
-export async function misPronosticos() {
+export async function misPronosticos(usuarioId) {
   const { data, error } = await supabase
-    .from("pronosticos").select("partido_id, goles_local, goles_visitante");
+    .from("pronosticos").select("partido_id, goles_local, goles_visitante")
+    .eq("usuario_id", usuarioId);
   if (error) throw error;
   const mapa = {};
   for (const p of data) mapa[p.partido_id] = p;
