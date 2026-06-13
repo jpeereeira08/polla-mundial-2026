@@ -11,7 +11,7 @@ export async function render(contenedor) {
 
   try {
     const perfil = await obtenerPerfil();
-    const [partidos, mis] = await Promise.all([partidosParaPronosticar(), misPronosticos()]);
+    const [partidos, mis] = await Promise.all([partidosParaPronosticar(), misPronosticos(perfil.id)]);
 
     if (!partidos.length) {
       contenedor.innerHTML = `<h1>Pronósticos</h1>${vacio("No hay partidos abiertos por ahora.")}`;
